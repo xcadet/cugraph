@@ -6,7 +6,11 @@ channels:
 - conda-forge
 - defaults
 dependencies:
-- cudf>=0.5.1
+- dask
+- cudf
+- openmpi
+- mpi4py
+- bokeh
 - nvgraph
 - scipy
 - networkx

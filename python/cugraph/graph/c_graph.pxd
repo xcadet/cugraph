@@ -35,6 +35,7 @@ cdef extern from "cudf.h":
         GDF_STRING,
         N_GDF_TYPES
 
+    
     ctypedef unsigned char gdf_valid_type
 
     ctypedef struct gdf_column:
@@ -53,9 +54,6 @@ cdef extern from "cudf.h":
                                              gdf_dtype dtype,
                                              gdf_size_type null_count,
                                              gdf_dtype_extra_info extra_info)
-
-
-
 
 cdef extern from "cugraph.h":
 
