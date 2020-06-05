@@ -23,6 +23,8 @@
 
 #include <utilities/error_utils.h>
 
+//#include <raft/handle.hpp>
+
 #include "betweenness_centrality.cuh"
 #include "betweenness_centrality_kernels.cuh"
 
@@ -184,6 +186,7 @@ template <typename VT, typename ET, typename WT, typename result_t>
 void BC<VT, ET, WT, result_t>::compute_single_source(VT source_vertex)
 {
   // Step 1) Singe-source shortest-path problem
+  printf("[DBG] Curent source = %d\n", source_vertex);
   cugraph::bfs(
     graph_, distances_, predecessors_, sp_counters_, source_vertex, graph_.prop.directed);
 
@@ -392,7 +395,8 @@ void BC<VT, ET, WT, result_t>::apply_rescale_factor_to_betweenness(result_t resc
 }  // namespace detail
 
 template <typename VT, typename ET, typename WT, typename result_t>
-void betweenness_centrality(experimental::GraphCSRView<VT, ET, WT> const &graph,
+void betweenness_centrality(raft::handle_t *handle,
+                            experimental::GraphCSRView<VT, ET, WT> const &graph,
                             result_t *result,
                             bool normalize,
                             bool endpoints,
@@ -400,10 +404,13 @@ void betweenness_centrality(experimental::GraphCSRView<VT, ET, WT> const &graph,
                             VT k,
                             VT const *vertices)
 {
+  printf("[DBG][OPG] BETWEENNESS_CENTRALITY - Starting\n");
+  printf("[DBG][OPG] BETWEENNESS_CENTRALITY - Vertices = %p\n", vertices);
   detail::betweenness_centrality_impl(graph, result, normalize, endpoints, weight, k, vertices);
 }
 
 template void betweenness_centrality<int, int, float, float>(
+  raft::handle_t *handle,
   experimental::GraphCSRView<int, int, float> const &,
   float *,
   bool,
@@ -412,6 +419,7 @@ template void betweenness_centrality<int, int, float, float>(
   int,
   int const *);
 template void betweenness_centrality<int, int, double, double>(
+  raft::handle_t *handle,
   experimental::GraphCSRView<int, int, double> const &,
   double *,
   bool,

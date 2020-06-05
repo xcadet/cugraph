@@ -17,6 +17,7 @@
 # cython: language_level = 3
 
 from cugraph.centrality.betweenness_centrality cimport betweenness_centrality as c_betweenness_centrality
+from cugraph.centrality.betweenness_centrality cimport handle_t
 from cugraph.structure import graph_new_wrapper
 from cugraph.structure.graph import DiGraph
 from cugraph.structure.graph_new cimport *
@@ -26,10 +27,10 @@ from libcpp cimport bool
 import cudf
 import numpy as np
 import numpy.ctypeslib as ctypeslib
-
+from cugraph.raft.dask.common.comms import worker_state
 
 def betweenness_centrality(input_graph, normalized, endpoints, weight, k,
-                           vertices, result_dtype):
+                           vertices, result_dtype, sID=None):
     """
     Call betweenness centrality
     """
@@ -62,7 +63,8 @@ def betweenness_centrality(input_graph, normalized, endpoints, weight, k,
     #FIXME: We could sample directly from a cudf array in the futur: i.e
     #       c_vertices = vertices.__cuda_array_interface__['data'][0]
     if vertices is not None:
-        c_vertices =  np.array(vertices, dtype=np.int32).__array_interface__['data'][0]
+        np_verts = np.array(vertices, dtype=np.int32)
+        c_vertices = np_verts.__array_interface__['data'][0]
 
     c_k = 0
     if k is not None:
@@ -72,13 +74,21 @@ def betweenness_centrality(input_graph, normalized, endpoints, weight, k,
     #       <int, int, double, double> as explicit template declaration
     #       The current BFS requires the GraphCSR to be declared
     #       as <int, int, float> or <int, int double> even if weights is null
+    cdef size_t handle_size_t
+    if sID is not None:
+        sessionstate = worker_state(sID)
+        print("[DBG] nworkers: ", sessionstate['nworkers'],"  id: ", sessionstate['wid'])
+        handle = sessionstate['handle']
+        handle_size_t = <size_t>handle.getHandle()
+
     if result_dtype == np.float32:
         graph_float = GraphCSRView[int, int, float](<int*> c_offsets, <int*> c_indices,
                                                 <float*> NULL, num_verts, num_edges)
         # FIXME: There might be a way to avoid manually setting the Graph property
         graph_float.prop.directed = type(input_graph) is DiGraph
 
-        c_betweenness_centrality[int, int, float, float](graph_float,
+        c_betweenness_centrality[int, int, float, float](<handle_t*> handle_size_t,
+                                                         graph_float,
                                                          <float*> c_betweenness,
                                                          normalized, endpoints,
                                                          <float*> c_weight, c_k,
@@ -90,7 +100,8 @@ def betweenness_centrality(input_graph, normalized, endpoints, weight, k,
         # FIXME: There might be a way to avoid manually setting the Graph property
         graph_double.prop.directed = type(input_graph) is DiGraph
 
-        c_betweenness_centrality[int, int, double, double](graph_double,
+        c_betweenness_centrality[int, int, double, double](<handle_t*> handle_size_t,
+                                                           graph_double,
                                                            <double*> c_betweenness,
                                                            normalized, endpoints,
                                                            <double*> c_weight, c_k,

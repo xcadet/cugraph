@@ -20,7 +20,7 @@ from cugraph.centrality import edge_betweenness_centrality_wrapper
 # NOTE: result_type=float could ne an intuitive way to indicate the result type
 def betweenness_centrality(G, k=None, normalized=True,
                            weight=None, endpoints=False,
-                           seed=None, result_dtype=np.float64):
+                           seed=None, result_dtype=np.float64, sID=None):
     """
     Compute the betweenness centrality for all nodes of the graph G from a
     sample of 'k' sources.
@@ -114,7 +114,7 @@ def betweenness_centrality(G, k=None, normalized=True,
                                                                endpoints,
                                                                weight,
                                                                k, vertices,
-                                                               result_dtype)
+                                                               result_dtype, sID)
     return df
 
 
@@ -243,12 +243,14 @@ def _initialize_vertices(G, k, seed):
 def _initialize_vertices_from_indices_sampling(G, k, seed):
     random.seed(seed)
     vertices = random.sample(range(G.number_of_vertices()), k)
+    #print("[DBG] INDICES SAMPLING", vertices)
     return vertices
 
 
 def _initialize_vertices_from_identifiers_list(G, identifiers):
     # FIXME: There might be a cleaner way to obtain the inverse mapping
     vertices = identifiers
+    #print("[DBG] = ", vertices)
     if G.renumbered:
         vertices = [G.edgelist.renumber_map[G.edgelist.renumber_map ==
                                             vert].index[0] for vert in
