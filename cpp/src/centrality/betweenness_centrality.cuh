@@ -70,6 +70,7 @@ class BC {
                       VT const *sources,
                       VT const number_of_sources);
   void compute();
+  void rescale(VT total_number_of_sources);
 
  private:
   // --- Information concerning the graph ---
@@ -132,7 +133,6 @@ class BC {
   void add_reached_endpoints_to_source_betweenness(VT source_vertex);
   void add_vertices_dependencies_to_betweenness();
 
-  void rescale();
   void rescale_vertices_betweenness_centrality(result_t &rescale_factor, bool &modified);
   void rescale_edges_betweenness_centrality(result_t &rescale_factor, bool &modified);
   void apply_rescale_factor_to_betweenness(result_t scaling_factor);
